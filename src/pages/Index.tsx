@@ -71,9 +71,9 @@ const Index = () => {
         </div>
 
         {/* Tab Content */}
-        {activeTab === "Overview" && <OverviewTab />}
-        {activeTab === "Voice" && <VoiceTab />}
-        {activeTab === "Text" && <TextTab />}
+        {activeTab === "Overview" && <OverviewTab source={activeSource} />}
+        {activeTab === "Voice" && <VoiceTab source={activeSource} />}
+        {activeTab === "Text" && <TextTab source={activeSource} />}
 
         {/* Sales Pipeline — always visible */}
         <SalesPipeline />
