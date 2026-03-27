@@ -11,11 +11,25 @@ function safeRate(num: number, den: number): number {
   return Math.round((num / den) * 1000) / 10;
 }
 
+function formatHours(hrs: number): string {
+  if (hrs <= 0) return '—';
+  if (hrs < 1) return `${Math.round(hrs * 60)}m`;
+  if (hrs < 48) return `${hrs.toFixed(1)}h`;
+  return `${(hrs / 24).toFixed(1)}d`;
+}
+
+function avgEngagement(leads: any[]): number {
+  const scored = leads.filter((l: any) => l.engagement_score != null && !isNaN(Number(l.engagement_score)));
+  if (scored.length === 0) return 0;
+  return Math.round((scored.reduce((s: number, l: any) => s + Number(l.engagement_score), 0) / scored.length) * 10) / 10;
+}
+
 export interface SystemStats {
   leads: number;
   bookings: number;
   bookingRate: number;
   avgToBook: number;
+  avgEngagementScore: number;
 }
 
 export interface FunnelStep {
@@ -30,6 +44,8 @@ export interface OverviewData {
   totalBookings: number;
   leadToBookingPct: number;
   costPerBooking: number;
+  avgTimeToBooking: string;
+  avgTimeToReply: string;
   changeLeads: number;
   changeBookings: number;
   changeLeadToBooking: number;
@@ -43,10 +59,11 @@ export interface OverviewData {
   error: string | null;
 }
 
-const emptyStats: SystemStats = { leads: 0, bookings: 0, bookingRate: 0, avgToBook: 0 };
+const emptyStats: SystemStats = { leads: 0, bookings: 0, bookingRate: 0, avgToBook: 0, avgEngagementScore: 0 };
 
 const defaultState: OverviewData = {
   totalLeads: 0, totalBookings: 0, leadToBookingPct: 0, costPerBooking: 0,
+  avgTimeToBooking: '—', avgTimeToReply: '—',
   changeLeads: 0, changeBookings: 0, changeLeadToBooking: 0, changeCostPerBooking: 0,
   textFirst: { ...emptyStats }, voiceFirst: { ...emptyStats },
   funnel: [], sparkLeads: [], sparkBookings: [],
@@ -110,13 +127,37 @@ export function useOverviewData(source?: string): OverviewData {
           bookings: textBookings,
           bookingRate: safeRate(textBookings, textLeads.length),
           avgToBook: 0,
+          avgEngagementScore: avgEngagement(textLeads),
         };
         const voiceFirst: SystemStats = {
           leads: voiceLeads.length,
           bookings: voiceBookings,
           bookingRate: safeRate(voiceBookings, voiceLeadBase),
           avgToBook: 0,
+          avgEngagementScore: avgEngagement(voiceLeads),
         };
+
+        // ── Time-to-value metrics (stage_entered_at - created_at) ──
+        const bookedLeads = allLeads.filter((l: any) =>
+          (l.status === 'booked' || l.current_stage === 'booked') && l.stage_entered_at && l.created_at
+        );
+        const avgBookingMs = bookedLeads.length > 0
+          ? bookedLeads.reduce((s: number, l: any) =>
+              s + Math.max(0, new Date(l.stage_entered_at).getTime() - new Date(l.created_at).getTime()), 0
+            ) / bookedLeads.length
+          : 0;
+
+        const repliedLeads = allLeads.filter((l: any) =>
+          (l.status === 'replied' || l.current_stage === 'replied') && l.stage_entered_at && l.created_at
+        );
+        const avgReplyMs = repliedLeads.length > 0
+          ? repliedLeads.reduce((s: number, l: any) =>
+              s + Math.max(0, new Date(l.stage_entered_at).getTime() - new Date(l.created_at).getTime()), 0
+            ) / repliedLeads.length
+          : 0;
+
+        const avgTimeToBooking = formatHours(avgBookingMs / 3600000);
+        const avgTimeToReply   = formatHours(avgReplyMs   / 3600000);
 
         // ── Combined funnel ──
         const funnelBase = totalLeads || 1;
@@ -172,6 +213,7 @@ export function useOverviewData(source?: string): OverviewData {
 
         setData({
           totalLeads, totalBookings, leadToBookingPct, costPerBooking,
+          avgTimeToBooking, avgTimeToReply,
           changeLeads: pctChange(twLeads, lwLeads),
           changeBookings: pctChange(twBookings, lwBookings),
           changeLeadToBooking: 0,

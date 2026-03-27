@@ -12,8 +12,8 @@ export interface VoiceData {
   callOutcomes: { label: string; value: number; color: string }[];
   // Sentiment
   sentiment: { positive: number; neutral: number; negative: number };
-  // Performance over time (daily)
-  performanceData: { day: string; calls: number; bookings: number }[];
+  // Performance over time (daily, with attempt breakdown)
+  performanceData: { day: string; calls: number; bookings: number; attempt1: number; attempt2: number; attempt3Plus: number }[];
   // Sentiment trend
   sentimentTrend: { day: string; score: number }[];
   // Flagged calls
@@ -35,6 +35,10 @@ export interface VoiceData {
   sequenceAnswered: number;
   sequenceBooked: number;
   sequenceOutcomes: { label: string; value: number; color: string }[];
+  // Attempt number metrics
+  avgAttemptsToReach: number;
+  // Time from lead entry to first answered call
+  avgTimeToFirstCall: string;
   // Loading state
   loading: boolean;
   error: string | null;
@@ -49,6 +53,7 @@ const defaultState: VoiceData = {
   changeCalls: 0, changeAnswered: 0, changeBookings: 0, changeDuration: 0,
   callTriggerBreakdown: [],
   sequenceAttempts: 0, sequenceAnswered: 0, sequenceBooked: 0, sequenceOutcomes: [],
+  avgAttemptsToReach: 0, avgTimeToFirstCall: '—',
   loading: true, error: null,
 };
 
@@ -80,6 +85,13 @@ function timeAgo(dateStr: string): string {
 function pctChange(curr: number, prev: number): number {
   if (prev === 0) return curr > 0 ? 100 : 0;
   return Math.round(((curr - prev) / prev) * 100 * 10) / 10;
+}
+
+function formatHours(hrs: number): string {
+  if (hrs <= 0) return '—';
+  if (hrs < 1) return `${Math.round(hrs * 60)}m`;
+  if (hrs < 48) return `${hrs.toFixed(1)}h`;
+  return `${(hrs / 24).toFixed(1)}d`;
 }
 
 export function useVoiceData(): VoiceData {
@@ -140,13 +152,38 @@ export function useVoiceData(): VoiceData {
           negative: Math.round((sentiments.filter((s: string) => s === 'negative').length / sentTotal) * 1000) / 10,
         };
 
+        // ── Voice-first leads (for stage_entered_at timing) ──
+        const { data: voiceLeadsRaw } = await supabase
+          .from('leads')
+          .select('id, created_at, stage_entered_at')
+          .eq('engagement_method', 'voice_first');
+        const voiceLeads = voiceLeadsRaw || [];
+        const calledLeads = voiceLeads.filter((l: any) => l.stage_entered_at && l.created_at);
+        const avgTimeToFirstCallHrs = calledLeads.length > 0
+          ? calledLeads.reduce((s: number, l: any) =>
+              s + Math.max(0, new Date(l.stage_entered_at).getTime() - new Date(l.created_at).getTime()), 0
+            ) / calledLeads.length / 3600000
+          : 0;
+        const avgTimeToFirstCall = formatHours(avgTimeToFirstCallHrs);
+
+        // ── Avg attempts to reach (attempt_number on answered calls) ──
+        const answeredWithAttempt = calls.filter((c: any) =>
+          (c.answered === true || c.answered === 'true' || c.answered === 'TRUE') &&
+          c.attempt_number != null && Number(c.attempt_number) > 0
+        );
+        const avgAttemptsToReach = answeredWithAttempt.length > 0
+          ? Math.round(
+              (answeredWithAttempt.reduce((s: number, c: any) => s + Number(c.attempt_number), 0) / answeredWithAttempt.length) * 10
+            ) / 10
+          : 0;
+
         // ── Daily performance (last 30 days) ──
         const now = new Date();
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 86400000);
-        const dailyMap: Record<string, { calls: number; bookings: number; sentimentSum: number; sentimentCount: number }> = {};
+        const dailyMap: Record<string, { calls: number; bookings: number; sentimentSum: number; sentimentCount: number; attempt1: number; attempt2: number; attempt3Plus: number }> = {};
         for (let i = 0; i < 30; i++) {
           const d = new Date(thirtyDaysAgo.getTime() + i * 86400000);
-          dailyMap[d.toISOString().split('T')[0]] = { calls: 0, bookings: 0, sentimentSum: 0, sentimentCount: 0 };
+          dailyMap[d.toISOString().split('T')[0]] = { calls: 0, bookings: 0, sentimentSum: 0, sentimentCount: 0, attempt1: 0, attempt2: 0, attempt3Plus: 0 };
         }
         calls.forEach((c: any, idx: number) => {
           const day = (c.created_at || '').split('T')[0];
@@ -156,6 +193,10 @@ export function useVoiceData(): VoiceData {
             const sentScore = (c.sentiment || '').toLowerCase() === 'positive' ? 100 : (c.sentiment || '').toLowerCase() === 'negative' ? 0 : 50;
             dailyMap[day].sentimentSum += sentScore;
             dailyMap[day].sentimentCount++;
+            const attemptNum = Number(c.attempt_number) || 1;
+            if (attemptNum === 1) dailyMap[day].attempt1++;
+            else if (attemptNum === 2) dailyMap[day].attempt2++;
+            else dailyMap[day].attempt3Plus++;
           }
         });
 
@@ -164,6 +205,9 @@ export function useVoiceData(): VoiceData {
           day: new Date(day + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
           calls: v.calls,
           bookings: v.bookings,
+          attempt1: v.attempt1,
+          attempt2: v.attempt2,
+          attempt3Plus: v.attempt3Plus,
         }));
         const sentimentTrend = sorted.map(([day, v]) => ({
           day: new Date(day + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -274,6 +318,7 @@ export function useVoiceData(): VoiceData {
           changeDuration: pctChange(twAvgDur, lwAvgDur),
           callTriggerBreakdown,
           sequenceAttempts, sequenceAnswered, sequenceBooked, sequenceOutcomes,
+          avgAttemptsToReach, avgTimeToFirstCall,
           loading: false, error: null,
         });
       } catch (err: any) {

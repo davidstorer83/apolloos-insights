@@ -56,6 +56,12 @@ const OverviewTab = ({ source }: OverviewTabProps) => {
         />
       </div>
 
+      {/* Time-to-Value Metrics */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <KPICard label="Avg Time to Booking" value={overview.avgTimeToBooking} />
+        <KPICard label="Avg Time to Reply"   value={overview.avgTimeToReply} />
+      </div>
+
       {/* System Comparison */}
       <div>
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">System Comparison</h3>
@@ -86,6 +92,12 @@ const OverviewTab = ({ source }: OverviewTabProps) => {
                 </p>
               </div>
             </div>
+            <div className="pt-3 border-t border-apollo-card-border/50">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Avg Engagement Score</span>
+              <p className="text-2xl font-semibold text-apollo-cyan mt-1">
+                {overview.textFirst.avgEngagementScore > 0 ? overview.textFirst.avgEngagementScore.toFixed(1) : '—'}
+              </p>
+            </div>
           </div>
 
           {/* Voice-First */}
@@ -113,6 +125,12 @@ const OverviewTab = ({ source }: OverviewTabProps) => {
                   {overview.voiceFirst.avgToBook > 0 ? overview.voiceFirst.avgToBook : '—'}
                 </p>
               </div>
+            </div>
+            <div className="pt-3 border-t border-apollo-card-border/50">
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">Avg Engagement Score</span>
+              <p className="text-2xl font-semibold text-apollo-green mt-1">
+                {overview.voiceFirst.avgEngagementScore > 0 ? overview.voiceFirst.avgEngagementScore.toFixed(1) : '—'}
+              </p>
             </div>
           </div>
         </div>

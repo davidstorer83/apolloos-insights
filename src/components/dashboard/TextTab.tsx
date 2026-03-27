@@ -201,11 +201,17 @@ const TextTab = ({ source }: TextTabProps) => {
         {(() => {
           const positive = text.funnel.filter(s => !s.negative);
           const negative = text.funnel.filter(s => s.negative);
+          const timingMap = Object.fromEntries((text.funnelTimings || []).map(t => [t.label, t.formatted]));
           return (
             <div className="space-y-3">
               {positive.map((step, i) => (
                 <div key={step.label} className="flex items-center gap-3">
-                  <span className="text-xs text-muted-foreground w-20 text-right shrink-0">{step.label}</span>
+                  <div className="w-20 text-right shrink-0">
+                    <span className="text-xs text-muted-foreground">{step.label}</span>
+                    {timingMap[step.label] && (
+                      <span className="block text-[10px] text-apollo-cyan/50">≈ {timingMap[step.label]}</span>
+                    )}
+                  </div>
                   <div className="flex-1 bg-muted/30 rounded-full h-2">
                     <div
                       className="h-2 rounded-full bg-gradient-to-r from-apollo-cyan to-apollo-green transition-all duration-500"

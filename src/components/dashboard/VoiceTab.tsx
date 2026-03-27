@@ -154,10 +154,25 @@ const VoiceTab = ({ source: _source }: VoiceTabProps) => {
               <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 10 }} axisLine={false} interval={4} />
               <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} axisLine={false} />
               <Tooltip contentStyle={{ background: '#111118', border: '1px solid #1a1a24', borderRadius: 8 }} />
-              <Bar dataKey="calls" fill="#14e6eb" opacity={0.4} radius={[2, 2, 0, 0]} name="Calls" />
-              <Bar dataKey="bookings" fill="#34d399" radius={[2, 2, 0, 0]} name="Bookings" />
+              <Bar dataKey="attempt1"    stackId="a" fill="#14e6eb" opacity={0.9} name="Attempt 1" />
+              <Bar dataKey="attempt2"    stackId="a" fill="#34d399" name="Attempt 2" />
+              <Bar dataKey="attempt3Plus" stackId="a" fill="#6366f1" radius={[2, 2, 0, 0]} name="Attempt 3+" />
+              <Bar dataKey="bookings" fill="#f59e0b" radius={[2, 2, 0, 0]} name="Bookings" />
             </BarChart>
           </ResponsiveContainer>
+          <div className="flex flex-wrap gap-4 mt-2">
+            {[
+              { color: '#14e6eb', label: 'Attempt 1' },
+              { color: '#34d399', label: 'Attempt 2' },
+              { color: '#6366f1', label: 'Attempt 3+' },
+              { color: '#f59e0b', label: 'Bookings' },
+            ].map(l => (
+              <div key={l.label} className="flex items-center gap-1.5">
+                <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: l.color }} />
+                <span className="text-xs text-muted-foreground">{l.label}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
@@ -210,6 +225,18 @@ const VoiceTab = ({ source: _source }: VoiceTabProps) => {
               <div>
                 <span className="text-xs text-muted-foreground uppercase tracking-wider">Booked</span>
                 <p className="text-3xl font-semibold text-apollo-green mt-1">{voice.sequenceBooked}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-apollo-card-border/50">
+              <div>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Avg Attempts to Reach</span>
+                <p className="text-2xl font-semibold text-apollo-cyan mt-1">
+                  {voice.avgAttemptsToReach > 0 ? voice.avgAttemptsToReach : '—'}
+                </p>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground uppercase tracking-wider">Avg Time to First Call</span>
+                <p className="text-2xl font-semibold text-foreground mt-1">{voice.avgTimeToFirstCall}</p>
               </div>
             </div>
             {voice.sequenceOutcomes.length > 0 && (

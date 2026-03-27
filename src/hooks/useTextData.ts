@@ -6,6 +6,13 @@ function safeRate(num: number, den: number): number {
   return Math.round((num / den) * 1000) / 10;
 }
 
+function formatHours(hrs: number): string {
+  if (hrs <= 0) return '';
+  if (hrs < 1) return `${Math.round(hrs * 60)}m`;
+  if (hrs < 48) return `${hrs.toFixed(1)}h`;
+  return `${(hrs / 24).toFixed(1)}d`;
+}
+
 function pctChange(curr: number, prev: number): number {
   if (prev === 0) return curr > 0 ? 100 : 0;
   return Math.round(((curr - prev) / prev) * 100 * 10) / 10;
@@ -33,6 +40,8 @@ export interface TextData {
   callOutcomes: { label: string; value: number; color: string }[];
   // Funnel
   funnel: { label: string; count: number; pct: number; negative?: boolean }[];
+  // Avg time to reach each funnel stage (from lead created_at to stage_entered_at)
+  funnelTimings: { label: string; formatted: string }[];
   // Message volume chart (30 days)
   messageVolume: { day: string; sent: number; replies: number }[];
   // Platform breakdown
@@ -64,7 +73,7 @@ const defaultState: TextData = {
   sentimentBreakdown: { positive: 0, neutral: 0, negative: 0 },
   convoAIActivations: 0, ctaDelivered: 0, ctaResponses: [],
   callsFromText: 0, callAnswerRate: 0, callOutcomes: [],
-  funnel: [], messageVolume: [], platformBreakdown: [],
+  funnel: [], funnelTimings: [], messageVolume: [], platformBreakdown: [],
   sparkLeads: [], sparkSms: [], sparkReplies: [], sparkBookings: [],
   changeLeads: 0, changeSms: 0, changeReplies: 0, changeBookings: 0,
   loading: true, error: null,
@@ -183,6 +192,27 @@ export function useTextData(source?: string): TextData {
           { label: 'DND',            count: dnd,               pct: safeRate(dnd, funnelBase),           negative: true },
         ];
 
+        // ── Funnel timings (avg time from created_at to stage_entered_at) ──
+        const stageTimingMap = [
+          { label: 'SMS Sent', stages: ['contacted', 'sms_sent'] },
+          { label: 'Reply',    stages: ['replied'] },
+          { label: 'ConvoAI', stages: ['convo_ai', 'convo_ai_active', 'engaged'] },
+          { label: 'CTA',     stages: ['cta_sent'] },
+          { label: 'Booking', stages: ['booked'] },
+        ];
+        const funnelTimings = stageTimingMap.map(({ label, stages }) => {
+          const staged = allLeads.filter((l: any) =>
+            (stages.includes(l.status || '') || stages.includes(l.current_stage || '')) &&
+            l.stage_entered_at && l.created_at
+          );
+          const avgMs = staged.length > 0
+            ? staged.reduce((s: number, l: any) =>
+                s + Math.max(0, new Date(l.stage_entered_at).getTime() - new Date(l.created_at).getTime()), 0
+              ) / staged.length
+            : -1;
+          return { label, formatted: avgMs >= 0 ? formatHours(avgMs / 3600000) : '' };
+        });
+
         // ── Message volume (last 30 days) ──
         const dailyVol: Record<string, { sent: number; replies: number }> = {};
         for (let i = 0; i < 30; i++) {
@@ -242,7 +272,7 @@ export function useTextData(source?: string): TextData {
           sentimentBreakdown,
           convoAIActivations, ctaDelivered, ctaResponses,
           callsFromText, callAnswerRate, callOutcomes,
-          funnel, messageVolume, platformBreakdown,
+          funnel, funnelTimings, messageVolume, platformBreakdown,
           sparkLeads, sparkSms, sparkReplies, sparkBookings,
           changeLeads:   pctChange(tw(allLeads),    lw(allLeads)),
           changeSms:     pctChange(tw(outbound),    lw(outbound)),
