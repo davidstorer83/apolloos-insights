@@ -32,7 +32,7 @@ export interface TextData {
   callAnswerRate: number;
   callOutcomes: { label: string; value: number; color: string }[];
   // Funnel
-  funnel: { label: string; count: number; pct: number }[];
+  funnel: { label: string; count: number; pct: number; negative?: boolean }[];
   // Message volume chart (30 days)
   messageVolume: { day: string; sent: number; replies: number }[];
   // Platform breakdown
@@ -168,13 +168,19 @@ export function useTextData(source?: string): TextData {
 
         // ── Funnel ──
         const funnelBase = textLeads || 1;
+        const notInterested = allLeads.filter((l: any) => l.current_stage === 'not_interested').length;
+        const notQualified  = allLeads.filter((l: any) => l.current_stage === 'not_qualified').length;
+        const dnd           = allLeads.filter((l: any) => l.current_stage === 'dnd').length;
         const funnel = [
-          { label: 'Lead',     count: textLeads,        pct: 100 },
-          { label: 'SMS Sent', count: smsSent,          pct: safeRate(smsSent, funnelBase) },
-          { label: 'Reply',    count: repliesReceived,  pct: safeRate(repliesReceived, funnelBase) },
-          { label: 'ConvoAI', count: convoAIActivations, pct: safeRate(convoAIActivations, funnelBase) },
-          { label: 'CTA',      count: ctaDelivered,     pct: safeRate(ctaDelivered, funnelBase) },
-          { label: 'Booking',  count: bookingsText,     pct: safeRate(bookingsText, funnelBase) },
+          { label: 'Lead',          count: textLeads,          pct: 100 },
+          { label: 'SMS Sent',      count: smsSent,            pct: safeRate(smsSent, funnelBase) },
+          { label: 'Reply',         count: repliesReceived,    pct: safeRate(repliesReceived, funnelBase) },
+          { label: 'ConvoAI',       count: convoAIActivations, pct: safeRate(convoAIActivations, funnelBase) },
+          { label: 'CTA',           count: ctaDelivered,       pct: safeRate(ctaDelivered, funnelBase) },
+          { label: 'Booking',       count: bookingsText,       pct: safeRate(bookingsText, funnelBase) },
+          { label: 'Not Interested', count: notInterested,     pct: safeRate(notInterested, funnelBase), negative: true },
+          { label: 'Not Qualified',  count: notQualified,      pct: safeRate(notQualified, funnelBase),  negative: true },
+          { label: 'DND',            count: dnd,               pct: safeRate(dnd, funnelBase),           negative: true },
         ];
 
         // ── Message volume (last 30 days) ──

@@ -22,6 +22,7 @@ export interface FunnelStep {
   label: string;
   count: number;
   pct: number;
+  negative?: boolean;
 }
 
 export interface OverviewData {
@@ -130,13 +131,20 @@ export function useOverviewData(source?: string): OverviewData {
           ['cta_sent', 'booked'].includes(l.status)
         ).length;
 
+        const notInterested = allLeads.filter((l: any) => l.current_stage === 'not_interested').length;
+        const notQualified  = allLeads.filter((l: any) => l.current_stage === 'not_qualified').length;
+        const dnd           = allLeads.filter((l: any) => l.current_stage === 'dnd').length;
+
         const funnel: FunnelStep[] = [
-          { label: 'Lead',      count: totalLeads,   pct: 100 },
-          { label: 'Contacted', count: contacted,    pct: safeRate(contacted, funnelBase) },
-          { label: 'Replied',   count: replied,      pct: safeRate(replied, funnelBase) },
-          { label: 'Engaged',   count: engaged,      pct: safeRate(engaged, funnelBase) },
-          { label: 'CTA',       count: ctaSent,      pct: safeRate(ctaSent, funnelBase) },
-          { label: 'Booked',    count: totalBookings, pct: leadToBookingPct },
+          { label: 'Lead',          count: totalLeads,    pct: 100 },
+          { label: 'Contacted',     count: contacted,     pct: safeRate(contacted, funnelBase) },
+          { label: 'Replied',       count: replied,       pct: safeRate(replied, funnelBase) },
+          { label: 'Engaged',       count: engaged,       pct: safeRate(engaged, funnelBase) },
+          { label: 'CTA',           count: ctaSent,       pct: safeRate(ctaSent, funnelBase) },
+          { label: 'Booked',        count: totalBookings, pct: leadToBookingPct },
+          { label: 'Not Interested', count: notInterested, pct: safeRate(notInterested, funnelBase), negative: true },
+          { label: 'Not Qualified',  count: notQualified,  pct: safeRate(notQualified, funnelBase),  negative: true },
+          { label: 'DND',            count: dnd,           pct: safeRate(dnd, funnelBase),           negative: true },
         ];
 
         // ── Sparklines (last 7 days) ──

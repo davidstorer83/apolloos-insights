@@ -198,28 +198,62 @@ const TextTab = ({ source }: TextTabProps) => {
       {/* Text-First Funnel */}
       <div className="bg-apollo-card border border-apollo-card-border rounded-lg p-5">
         <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-5">Text-First Funnel</h3>
-        <div className="space-y-3">
-          {text.funnel.map((step, i) => (
-            <div key={step.label} className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground w-20 text-right shrink-0">{step.label}</span>
-              <div className="flex-1 bg-muted/30 rounded-full h-2">
-                <div
-                  className="h-2 rounded-full bg-gradient-to-r from-apollo-cyan to-apollo-green transition-all duration-500"
-                  style={{ width: `${Math.max(step.pct, step.count > 0 ? 1 : 0)}%` }}
-                />
-              </div>
-              <span className="text-xs font-medium text-foreground w-14 text-right shrink-0">
-                {step.count.toLocaleString()}
-              </span>
-              <span className="text-xs text-apollo-cyan w-10 text-right shrink-0">{step.pct}%</span>
-              {i < text.funnel.length - 1 && step.count > 0 && text.funnel[i + 1].count > 0 && (
-                <span className="text-[10px] text-muted-foreground w-16 shrink-0">
-                  → {Math.round((text.funnel[i + 1].count / step.count) * 100)}% conv
-                </span>
+        {(() => {
+          const positive = text.funnel.filter(s => !s.negative);
+          const negative = text.funnel.filter(s => s.negative);
+          return (
+            <div className="space-y-3">
+              {positive.map((step, i) => (
+                <div key={step.label} className="flex items-center gap-3">
+                  <span className="text-xs text-muted-foreground w-20 text-right shrink-0">{step.label}</span>
+                  <div className="flex-1 bg-muted/30 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full bg-gradient-to-r from-apollo-cyan to-apollo-green transition-all duration-500"
+                      style={{ width: `${Math.max(step.pct, step.count > 0 ? 1 : 0)}%` }}
+                    />
+                  </div>
+                  <span className="text-xs font-medium text-foreground w-14 text-right shrink-0">
+                    {step.count.toLocaleString()}
+                  </span>
+                  <span className="text-xs text-apollo-cyan w-10 text-right shrink-0">{step.pct}%</span>
+                  {i < positive.length - 1 && step.count > 0 && positive[i + 1].count > 0 ? (
+                    <span className="text-[10px] text-muted-foreground w-16 shrink-0">
+                      → {Math.round((positive[i + 1].count / step.count) * 100)}% conv
+                    </span>
+                  ) : (
+                    <span className="w-16 shrink-0" />
+                  )}
+                </div>
+              ))}
+              {negative.length > 0 && (
+                <>
+                  <div className="flex items-center gap-3 pt-1">
+                    <span className="w-20 shrink-0" />
+                    <div className="flex-1 border-t border-dashed border-red-500/25" />
+                    <span className="text-[10px] text-red-400/60 uppercase tracking-wider shrink-0 pr-1">Drop-outs</span>
+                    <span className="w-16 shrink-0" />
+                  </div>
+                  {negative.map((step) => (
+                    <div key={step.label} className="flex items-center gap-3">
+                      <span className="text-xs text-red-400/70 w-20 text-right shrink-0">{step.label}</span>
+                      <div className="flex-1 bg-muted/30 rounded-full h-2">
+                        <div
+                          className="h-2 rounded-full transition-all duration-500"
+                          style={{ width: `${Math.max(step.pct, step.count > 0 ? 1 : 0)}%`, backgroundColor: '#f87171' }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-foreground w-14 text-right shrink-0">
+                        {step.count.toLocaleString()}
+                      </span>
+                      <span className="text-xs text-red-400 w-10 text-right shrink-0">{step.pct}%</span>
+                      <span className="w-16 shrink-0" />
+                    </div>
+                  ))}
+                </>
               )}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </div>
 
       {/* Message Volume Chart */}

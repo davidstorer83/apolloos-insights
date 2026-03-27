@@ -118,10 +118,10 @@ export function useVoiceData(): VoiceData {
         const outcomeColors: Record<string, string> = {
           'booked': '#34d399', 'appointment booked': '#34d399',
           'callback': '#14e6eb', 'requested a callback': '#14e6eb',
-          'not_interested': '#6366f1', 'not interested': '#6366f1',
-          'not_qualified': '#f59e0b', 'do not qualify': '#f59e0b',
+          'not_interested': '#f97316', 'not interested': '#f97316',
+          'not_qualified': '#ef4444', 'do not qualify': '#ef4444',
           'voicemail': '#64748b', 'no_answer': '#64748b', 'no answer': '#64748b',
-          'dnd': '#ef4444', 'other': '#888888',
+          'dnd': '#dc2626', 'other': '#888888',
         };
         const callOutcomes = Object.entries(outcomeCounts)
           .map(([label, value]) => ({
