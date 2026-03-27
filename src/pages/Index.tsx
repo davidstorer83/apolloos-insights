@@ -18,9 +18,7 @@ const Index = () => {
       {/* Top Bar */}
       <header className="sticky top-0 z-50 bg-apollo-dark/80 backdrop-blur-xl border-b border-apollo-card-border">
         <div className="max-w-[1440px] mx-auto px-4 md:px-6 h-14 flex items-center justify-between">
-          <h1 className="text-xl font-bold tracking-tight">
-            <span className="gradient-text">ApolloOS</span>
-          </h1>
+          <img src="/logo.png" alt="ApolloOS" className="h-8 w-auto" />
           <div className="flex items-center gap-3">
             <button className="flex items-center gap-2 bg-apollo-card border border-apollo-card-border rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:border-primary/30 transition-colors">
               <CalendarDays className="w-3.5 h-3.5" />
