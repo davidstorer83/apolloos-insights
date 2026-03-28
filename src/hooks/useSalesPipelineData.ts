@@ -28,13 +28,15 @@ function safeRate(n: number, d: number): number {
   return Math.round((n / d) * 1000) / 10;
 }
 
-export function useSalesPipelineData(): PipelineData {
+export function useSalesPipelineData(startDate?: string | null): PipelineData {
   const [data, setData] = useState<PipelineData>(defaultState);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const { data: appts, error } = await supabase.from('appointments').select('*');
+        let q = supabase.from('appointments').select('*');
+        if (startDate) q = q.gte('created_at', startDate);
+        const { data: appts, error } = await q;
         if (error) throw error;
         const all = appts || [];
 
@@ -60,7 +62,7 @@ export function useSalesPipelineData(): PipelineData {
       }
     }
     fetchData();
-  }, []);
+  }, [startDate]);
 
   return data;
 }

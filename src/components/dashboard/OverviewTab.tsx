@@ -4,10 +4,11 @@ import { Loader2 } from "lucide-react";
 
 interface OverviewTabProps {
   source?: string;
+  startDate?: string | null;
 }
 
-const OverviewTab = ({ source }: OverviewTabProps) => {
-  const overview = useOverviewData(source);
+const OverviewTab = ({ source, startDate }: OverviewTabProps) => {
+  const overview = useOverviewData(source, startDate);
 
   if (overview.loading) {
     return (

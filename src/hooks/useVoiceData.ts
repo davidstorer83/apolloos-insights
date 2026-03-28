@@ -94,16 +94,15 @@ function formatHours(hrs: number): string {
   return `${(hrs / 24).toFixed(1)}d`;
 }
 
-export function useVoiceData(): VoiceData {
+export function useVoiceData(startDate?: string | null): VoiceData {
   const [data, setData] = useState<VoiceData>(defaultState);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const { data: calls, error } = await supabase
-          .from('calls')
-          .select('*')
-          .order('created_at', { ascending: false });
+        let callsQuery = supabase.from('calls').select('*').order('created_at', { ascending: false });
+        if (startDate) callsQuery = callsQuery.gte('created_at', startDate);
+        const { data: calls, error } = await callsQuery;
 
         if (error) throw error;
         if (!calls || calls.length === 0) {
@@ -153,10 +152,12 @@ export function useVoiceData(): VoiceData {
         };
 
         // ── Voice-first leads (for stage_entered_at timing) ──
-        const { data: voiceLeadsRaw } = await supabase
+        let voiceLeadsQuery = supabase
           .from('leads')
           .select('id, created_at, stage_entered_at')
           .eq('engagement_method', 'voice_first');
+        if (startDate) voiceLeadsQuery = voiceLeadsQuery.gte('created_at', startDate);
+        const { data: voiceLeadsRaw } = await voiceLeadsQuery;
         const voiceLeads = voiceLeadsRaw || [];
         const calledLeads = voiceLeads.filter((l: any) => l.stage_entered_at && l.created_at);
         const avgTimeToFirstCallHrs = calledLeads.length > 0
@@ -326,7 +327,7 @@ export function useVoiceData(): VoiceData {
       }
     }
     fetchData();
-  }, []);
+  }, [startDate]);
 
   return data;
 }

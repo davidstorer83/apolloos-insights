@@ -8,10 +8,11 @@ import { AlertTriangle, Loader2, RefreshCw } from "lucide-react";
 
 interface VoiceTabProps {
   source?: string;
+  startDate?: string | null;
 }
 
-const VoiceTab = ({ source: _source }: VoiceTabProps) => {
-  const voice = useVoiceData();
+const VoiceTab = ({ source: _source, startDate }: VoiceTabProps) => {
+  const voice = useVoiceData(startDate);
 
   if (voice.loading) {
     return (

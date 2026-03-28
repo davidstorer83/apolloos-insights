@@ -70,7 +70,7 @@ const defaultState: OverviewData = {
   loading: true, error: null,
 };
 
-export function useOverviewData(source?: string): OverviewData {
+export function useOverviewData(source?: string, startDate?: string | null): OverviewData {
   const [data, setData] = useState<OverviewData>(defaultState);
 
   useEffect(() => {
@@ -79,19 +79,26 @@ export function useOverviewData(source?: string): OverviewData {
         // ── Leads ──
         let leadsQuery = supabase.from('leads').select('*');
         if (source && source !== 'All Sources') leadsQuery = leadsQuery.eq('source', source);
+        if (startDate) leadsQuery = leadsQuery.gte('created_at', startDate);
         const { data: leadsRaw } = await leadsQuery;
         const allLeads = leadsRaw || [];
 
         // ── Appointments ──
-        const { data: apptsRaw } = await supabase.from('appointments').select('*');
+        let apptsQuery = supabase.from('appointments').select('*');
+        if (startDate) apptsQuery = apptsQuery.gte('created_at', startDate);
+        const { data: apptsRaw } = await apptsQuery;
         const allAppts = apptsRaw || [];
 
         // ── Ad Metrics (spend for cost per booking) ──
-        const { data: adRaw } = await supabase.from('ad_metrics').select('spend');
+        let adQuery = supabase.from('ad_metrics').select('spend');
+        if (startDate) adQuery = adQuery.gte('date', startDate);
+        const { data: adRaw } = await adQuery;
         const totalSpend = (adRaw || []).reduce((s: number, r: any) => s + (Number(r.spend) || 0), 0);
 
         // ── Calls (fallback for bookings if appointments table empty) ──
-        const { data: callsRaw } = await supabase.from('calls').select('id, disposition, created_at, engagement_method');
+        let callsQuery = supabase.from('calls').select('id, disposition, created_at, engagement_method');
+        if (startDate) callsQuery = callsQuery.gte('created_at', startDate);
+        const { data: callsRaw } = await callsQuery;
         const allCalls = callsRaw || [];
 
         const now = new Date();
@@ -226,7 +233,7 @@ export function useOverviewData(source?: string): OverviewData {
       }
     }
     fetchData();
-  }, [source]);
+  }, [source, startDate]);
 
   return data;
 }

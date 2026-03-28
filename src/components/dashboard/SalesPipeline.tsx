@@ -1,8 +1,12 @@
 import { useSalesPipelineData } from "@/hooks/useSalesPipelineData";
 import { ArrowRight, Loader2 } from "lucide-react";
 
-const SalesPipeline = () => {
-  const pipeline = useSalesPipelineData();
+interface SalesPipelineProps {
+  startDate?: string | null;
+}
+
+const SalesPipeline = ({ startDate }: SalesPipelineProps) => {
+  const pipeline = useSalesPipelineData(startDate);
 
   if (pipeline.loading) {
     return (

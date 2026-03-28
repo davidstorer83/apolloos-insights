@@ -79,7 +79,7 @@ const defaultState: TextData = {
   loading: true, error: null,
 };
 
-export function useTextData(source?: string): TextData {
+export function useTextData(source?: string, startDate?: string | null): TextData {
   const [data, setData] = useState<TextData>(defaultState);
 
   useEffect(() => {
@@ -88,25 +88,32 @@ export function useTextData(source?: string): TextData {
         // ── Text-first leads ──
         let leadsQuery = supabase.from('leads').select('*').eq('engagement_method', 'text_first');
         if (source && source !== 'All Sources') leadsQuery = leadsQuery.eq('source', source);
+        if (startDate) leadsQuery = leadsQuery.gte('created_at', startDate);
         const { data: leadsRaw } = await leadsQuery;
         const allLeads = leadsRaw || [];
 
         // ── SMS events ──
-        const { data: smsRaw } = await supabase.from('sms_events').select('*');
+        let smsQuery = supabase.from('sms_events').select('*');
+        if (startDate) smsQuery = smsQuery.gte('created_at', startDate);
+        const { data: smsRaw } = await smsQuery;
         const allSms = smsRaw || [];
 
         // ── Calls triggered from text system ──
-        const { data: callsRaw } = await supabase
+        let callsQuery = supabase
           .from('calls')
           .select('*')
           .in('call_trigger', ['convo_ai_request', 'scheduled_callback']);
+        if (startDate) callsQuery = callsQuery.gte('created_at', startDate);
+        const { data: callsRaw } = await callsQuery;
         const allCalls = callsRaw || [];
 
         // ── Appointments from text system ──
-        const { data: apptsRaw } = await supabase
+        let apptsQuery = supabase
           .from('appointments')
           .select('*')
           .in('booking_source', ['convo_ai_text', 'retell_from_text', 'manual']);
+        if (startDate) apptsQuery = apptsQuery.gte('created_at', startDate);
+        const { data: apptsRaw } = await apptsQuery;
         const textAppts = apptsRaw || [];
 
         const now = new Date();
@@ -285,7 +292,7 @@ export function useTextData(source?: string): TextData {
       }
     }
     fetchData();
-  }, [source]);
+  }, [source, startDate]);
 
   return data;
 }

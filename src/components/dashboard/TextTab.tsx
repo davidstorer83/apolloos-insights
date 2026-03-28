@@ -7,10 +7,11 @@ import { Loader2, MessageSquare, Phone } from "lucide-react";
 
 interface TextTabProps {
   source?: string;
+  startDate?: string | null;
 }
 
-const TextTab = ({ source }: TextTabProps) => {
-  const text = useTextData(source);
+const TextTab = ({ source, startDate }: TextTabProps) => {
+  const text = useTextData(source, startDate);
 
   if (text.loading) {
     return (
