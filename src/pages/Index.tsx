@@ -1,25 +1,20 @@
 import { useState, useRef, useEffect } from "react";
-import { LEAD_SOURCES, type LeadSource } from "@/data/mockData";
-import OverviewTab from "@/components/dashboard/OverviewTab";
-import VoiceTab from "@/components/dashboard/VoiceTab";
-import TextTab from "@/components/dashboard/TextTab";
-import SalesPipeline from "@/components/dashboard/SalesPipeline";
+import DashboardTab from "@/components/dashboard/DashboardTab";
+import ROASTab from "@/components/dashboard/ROASTab";
 import { DATE_RANGE_OPTIONS, DEFAULT_RANGE, getStartDate, type DateRangeOption } from "@/lib/dateRange";
 import { CalendarDays, ChevronDown } from "lucide-react";
 
-const TABS = ["Overview", "Voice", "Text"] as const;
+const TABS = ["Dashboard", "ROAS"] as const;
 type Tab = (typeof TABS)[number];
 
 const Index = () => {
-  const [activeTab, setActiveTab] = useState<Tab>("Overview");
-  const [activeSource, setActiveSource] = useState<LeadSource>("All Sources");
+  const [activeTab, setActiveTab] = useState<Tab>("Dashboard");
   const [dateRange, setDateRange] = useState<DateRangeOption>(DEFAULT_RANGE);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const startDate = getStartDate(dateRange.days);
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -85,30 +80,9 @@ const Index = () => {
           ))}
         </div>
 
-        {/* Source Filter Pills */}
-        <div className="flex gap-2 flex-wrap">
-          {LEAD_SOURCES.map((source) => (
-            <button
-              key={source}
-              onClick={() => setActiveSource(source)}
-              className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
-                activeSource === source
-                  ? "border-primary/50 bg-primary/10 text-primary"
-                  : "border-apollo-card-border bg-apollo-card text-muted-foreground hover:border-primary/30"
-              }`}
-            >
-              {source}
-            </button>
-          ))}
-        </div>
-
         {/* Tab Content */}
-        {activeTab === "Overview" && <OverviewTab source={activeSource} startDate={startDate} />}
-        {activeTab === "Voice" && <VoiceTab source={activeSource} startDate={startDate} />}
-        {activeTab === "Text" && <TextTab source={activeSource} startDate={startDate} />}
-
-        {/* Sales Pipeline — always visible */}
-        <SalesPipeline startDate={startDate} />
+        {activeTab === "Dashboard" && <DashboardTab startDate={startDate} />}
+        {activeTab === "ROAS" && <ROASTab startDate={startDate} />}
       </div>
     </div>
   );
